@@ -13,7 +13,6 @@ connect.then((db) => {
     console.log("Connected correctly to server");
 }, (err) => { console.log(err); });
 
-
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
 const dishRouter = require('./routes/dishRouter');
