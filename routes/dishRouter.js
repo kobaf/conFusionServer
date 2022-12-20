@@ -12,6 +12,7 @@ dishRouter.use('/:dishId/comments', dishCommentRouter);
 dishRouter.route('/')
 .get((_,res,next) => {
     Dishes.find({})
+    .populate({path: "comments.author", select: "firstname lastname"})
     .then((dishes) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
@@ -47,6 +48,7 @@ dishRouter.route('/:dishId')
 .get((req,res,next) => {
 
     Dishes.findById(req.params.dishId)
+    .populate({path: "comments.author", select: "firstname lastname"})
     .then((dish) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');

@@ -1,4 +1,6 @@
 const express = require('express');
+var authenticate = require('../authenticate');
+
 
 const Dishes = require('../models/dishes');
 
@@ -8,6 +10,7 @@ dishCommentRouter.route('/')
 .get((req,res,next) => {
     console.log(req.params);
     Dishes.findById(req.params.dishId)
+    .populate('comments.author')
     .then((dish) => {
         if (dish != null) {
             res.statusCode = 200;
@@ -22,16 +25,21 @@ dishCommentRouter.route('/')
     }, (err) => next(err))
     .catch((err) => next(err));
 })
-.post((req, res, next) => {
+.post(authenticate.verifyUser, (req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if (dish != null) {
+            req.body.author = req.user._id;
             dish.comments.push(req.body);
             dish.save()
             .then((dish) => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(dish);                
+                Dishes.findById(dish._id)
+                .populate('comments.author')
+                .then((dish) => {
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json(dish);
+                })            
             }, (err) => next(err));
         }
         else {
@@ -42,6 +50,7 @@ dishCommentRouter.route('/')
     }, (err) => next(err))
     .catch((err) => next(err));
 })
+
 .put((req, res, next) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /dishes/'
@@ -73,6 +82,7 @@ dishCommentRouter.route('/')
 dishCommentRouter.route('/:commentId')
 .get((req,res,next) => {
     Dishes.findById(req.params.dishId)
+    .populate('comments.author')    
     .then((dish) => {
         if (dish != null && dish.comments.id(req.params.commentId) != null) {
             res.statusCode = 200;
@@ -92,12 +102,14 @@ dishCommentRouter.route('/:commentId')
     }, (err) => next(err))
     .catch((err) => next(err));
 })
+
 .post((req, res, next) => {
     res.statusCode = 403;
     res.end('POST operation not supported on /dishes/'+ req.params.dishId
         + '/comments/' + req.params.commentId);
 })
-.put((req, res, next) => {
+
+.put(authenticate.verifyUser, (req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if (dish != null && dish.comments.id(req.params.commentId) != null) {
@@ -109,9 +121,13 @@ dishCommentRouter.route('/:commentId')
             }
             dish.save()
             .then((dish) => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(dish);                
+                Dishes.findById(dish._id)
+                .populate('comments.author')
+                .then((dish) => {
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json(dish);  
+                })              
             }, (err) => next(err));
         }
         else if (dish == null) {
@@ -127,16 +143,22 @@ dishCommentRouter.route('/:commentId')
     }, (err) => next(err))
     .catch((err) => next(err));
 })
-.delete((req, res, next) => {
+
+.delete(authenticate.verifyUser, (req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if (dish != null && dish.comments.id(req.params.commentId) != null) {
+
             dish.comments.id(req.params.commentId).remove();
             dish.save()
             .then((dish) => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(dish);                
+                Dishes.findById(dish._id)
+                .populate('comments.author')
+                .then((dish) => {
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json(dish);  
+                })               
             }, (err) => next(err));
         }
         else if (dish == null) {
