@@ -56,7 +56,7 @@ dishCommentRouter.route('/')
     res.end('PUT operation not supported on /dishes/'
         + req.params.dishId + '/comments');
 })
-.delete((req, res, next) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if (dish != null) {
@@ -112,6 +112,14 @@ dishCommentRouter.route('/:commentId')
 .put(authenticate.verifyUser, (req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
+        // Check whether current user = comment author
+        const comment = dish.comments.find( (comment) => comment._id.equals(req.params.commentId) )
+        if (!comment.author.equals(req.user._id)) {
+            err = new Error('This is not your comment!');
+            err.status = 403;
+            return next(err);  
+        }
+
         if (dish != null && dish.comments.id(req.params.commentId) != null) {
             if (req.body.rating) {
                 dish.comments.id(req.params.commentId).rating = req.body.rating;
@@ -148,6 +156,13 @@ dishCommentRouter.route('/:commentId')
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if (dish != null && dish.comments.id(req.params.commentId) != null) {
+            // Check whether current user = comment author
+            const comment = dish.comments.find( (comment) => comment._id.equals(req.params.commentId) )
+            if (!comment.author.equals(req.user._id)) {
+                err = new Error('This is not your comment!');
+                err.status = 403;
+                return next(err);  
+            }
 
             dish.comments.id(req.params.commentId).remove();
             dish.save()

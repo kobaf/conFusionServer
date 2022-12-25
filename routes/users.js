@@ -4,7 +4,30 @@ var User = require('../models/users');
 var passport = require('passport');
 var authenticate = require('../authenticate');
 
+router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+    User.find({})
+    .then((users) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(users);
+    }, (err) => next(err))
+    .catch((err) => next(err));
+});
 
+
+router.get('/current', (req, res, next) => {
+  if (req.user) {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.json({logged: true, name: req.user.username, admin: req.user.admin});
+  }
+  else
+  {      
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.json({logged: false});
+}
+});
 
 
 router.post('/signup', (req, res, next) => {
@@ -45,17 +68,12 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
   res.json({success: true, token: token, status: 'You are successfully logged in!'});
 });
 
-router.get('/logout', (req, res) => {
-  if (req.session) {
-    req.session.destroy();
-    res.clearCookie('session-id');
+router.get('/logout', (req, res, next) => {
+  req.logout(function(err) {
+    if (err) { return next(err); }
     res.redirect('/');
-  }
-  else {
-    var err = new Error('You are not logged in!');
-    err.status = 403;
-    next(err);
-  }
+  });
 });
 
 module.exports = router;
+
