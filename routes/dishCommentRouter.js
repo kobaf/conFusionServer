@@ -1,13 +1,14 @@
 const express = require('express');
 var authenticate = require('../authenticate');
-
+const cors = require('./cors');
 
 const Dishes = require('../models/dishes');
 
 const dishCommentRouter = express.Router({mergeParams: true});
 
 dishCommentRouter.route('/')
-.get((req,res,next) => {
+.options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+.get(cors.cors, (req,res,next) => {
     console.log(req.params);
     Dishes.findById(req.params.dishId)
     .populate('comments.author')
@@ -25,7 +26,7 @@ dishCommentRouter.route('/')
     }, (err) => next(err))
     .catch((err) => next(err));
 })
-.post(authenticate.verifyUser, (req, res, next) => {
+.post(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if (dish != null) {
@@ -51,12 +52,12 @@ dishCommentRouter.route('/')
     .catch((err) => next(err));
 })
 
-.put((req, res, next) => {
+.put(cors.corsWithOptions, (req, res, next) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /dishes/'
         + req.params.dishId + '/comments');
 })
-.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if (dish != null) {
@@ -80,7 +81,8 @@ dishCommentRouter.route('/')
 });
 
 dishCommentRouter.route('/:commentId')
-.get((req,res,next) => {
+.options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+.get(cors.cors, (req,res,next) => {
     Dishes.findById(req.params.dishId)
     .populate('comments.author')    
     .then((dish) => {
@@ -103,13 +105,13 @@ dishCommentRouter.route('/:commentId')
     .catch((err) => next(err));
 })
 
-.post((req, res, next) => {
+.post(cors.corsWithOptions, (req, res, next) => {
     res.statusCode = 403;
     res.end('POST operation not supported on /dishes/'+ req.params.dishId
         + '/comments/' + req.params.commentId);
 })
 
-.put(authenticate.verifyUser, (req, res, next) => {
+.put(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         // Check whether current user = comment author
@@ -152,7 +154,7 @@ dishCommentRouter.route('/:commentId')
     .catch((err) => next(err));
 })
 
-.delete(authenticate.verifyUser, (req, res, next) => {
+.delete(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if (dish != null && dish.comments.id(req.params.commentId) != null) {
