@@ -4,16 +4,14 @@ const cors = require('./cors');
 
 
 const Dishes = require('../models/dishes');
-const dishCommentRouter = require('./dishCommentRouter');
 
 const dishRouter = express.Router();
 
-dishRouter.use('/:dishId/comments', dishCommentRouter);
 
 dishRouter.route('/')
 .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
-.get(cors.cors, (_,res,next) => {
-    Dishes.find({})
+.get(cors.cors, (req,res,next) => {
+    Dishes.find(req.query)
     .populate({path: "comments.author", select: "firstname lastname"})
     .then((dishes) => {
         res.statusCode = 200;
@@ -45,6 +43,20 @@ dishRouter.route('/')
     }, (err) => next(err))
     .catch((err) => next(err));    
 });
+
+dishRouter.route('/reset')
+.options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+
+.get(cors.corsWithOptions, (req, res, next) => {
+    const iniDishes = require('../db.json');
+    Dishes.collection.deleteMany({});
+    Dishes.collection.insertMany(iniDishes.dishes)
+    .then( (resp) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(resp) })
+    .catch( (err) => next(err));
+})
 
 dishRouter.route('/:dishId')
 .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
@@ -83,5 +95,6 @@ dishRouter.route('/:dishId')
     }, (err) => next(err))
     .catch((err) => next(err));
 });
+
 
 module.exports = dishRouter;

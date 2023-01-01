@@ -14,7 +14,7 @@ passport.deserializeUser(User.deserializeUser());
 
 exports.getToken = function(user) {
     return jwt.sign(user, process.env.SECRET_KEY,
-        {expiresIn: 600});
+        {expiresIn: 3600});
 };
 
 var opts = {};
@@ -39,7 +39,6 @@ exports.jwtPassport = passport.use(new JwtStrategy(opts,
 exports.verifyUser = passport.authenticate('jwt', {session: false});
 
 exports.verifyAdmin = function(req, _, next){
-    console.log(req.user.admin);
     if (req.user.admin ?? false) {
         return next();
     }
